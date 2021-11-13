@@ -122,9 +122,8 @@ iface eth0 inet dhcp
 Restart dan cek dengan `ip a`
 periksa apakah sudah sesuai dengan ip (EniesLobby)
 
-```
-### Lakukan pada semua interface DHCP Client.
-```
+## Lakukan pada semua interface DHCP Client.
+
 
 #### DNS Forwader
 lakukan konfigurasi pada DNS Server (EniesLobby) `/etc/bind/named.conf.options`tambahkan line seperti dibawah dan beri komentar pada `// dnssec-validation auto;` dan tambahkan `allow-query{any;};`
