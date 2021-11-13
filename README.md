@@ -29,7 +29,7 @@ apt-get update
 apt-get install isc-dhcp-server
 ```
 Ganti `INTERFACES=` paad file `/etc/default/isc-dhcp-server.` dengan `INTERFACES="eth0"`. maksud dari hal ini adalah untuk menyambungkan klien DHCp yang aman adalah Switch 1 dan 2 melalui eth0 milik Jipangu.
-(gambar)
+![Screenshot (601)(eth0)](https://user-images.githubusercontent.com/76694068/141646625-c3d53e9b-2cf8-4331-822b-0c9c8381f61f.png)
 
 * Water7 sebagai Proxy Server
 Instalasi pada Water7 sebagai berikut
@@ -43,8 +43,9 @@ Buat konfigurasi squid pada file `/etc/squid/squid.conf` dengan menambahkan
 http_port 8080
 visible_hostname Water7
 ```
-(gambar)
+![Screenshot (601)](https://user-images.githubusercontent.com/76694068/141646663-8fbc577b-d3b1-40ff-876f-d0a40d0262ec.png)
 Restart dengan `service squid restart` dan cek status squid dengan `service squid status`
+![Screenshot (607)(restart squidfix)](https://user-images.githubusercontent.com/76694068/141646684-ba94d4df-46b5-430a-adf1-df7c864434a4.png)
 
 
 ### 2. Foosha sebagai DHCP Relay.
@@ -54,17 +55,19 @@ apt-get update
 apt-get install isc-dhcp-relay
 ```
 * Jika muncul seperti gambar, maka masukkan hal2 yang diperlukan yaitu server milik DHCP server (Jipangu) dan Interfaces milih DHCP Server dan Client
+![Screenshot (603)(dhcprelay)](https://user-images.githubusercontent.com/76694068/141646734-5330c80c-4696-43b2-b705-1c24458f5fbf.png)
+
+* Cara lainnya, Konfigurasi pada file `/etc/default/isc-dhcp-relay` dan isi `SERVER=` dengan IP DHCP server dan isi `INTERFACES=` dengan interface milik DHCP server dan DHCP client.
 ```
 SERVERS="192.199.2.4"
 INTERFACES="eth1 eth3 eth2"
 ```
-(gambar)
-* Cara lainnya, Konfigurasi pada file `/etc/default/isc-dhcp-relay` dan isi `SERVER=` dengan IP DHCP server dan isi `INTERFACES=` dengan interface milik DHCP server dan DHCP client.
-(Gambar)
+![image](https://user-images.githubusercontent.com/76694068/141646794-e924b3b2-49a6-4a31-b7e5-5c93b2d978a9.png)
 
 Restart dengan perintah `service isc-dhcp-relay restart`
-Lakukan konfigurasi pada file `/etc/sysctl.conf` untuk membuka IP Forwarding dengan uncommet pada `net.ipv4.ip_forward=1`
-(gambar)
+Lakukan konfigurasi pada file `/etc/sysctl.conf` untuk membuka IP Forwarding dengan uncomment pada `net.ipv4.ip_forward=1`
+![image](https://user-images.githubusercontent.com/76694068/141646891-c9b99cd0-5d5e-4528-9e25-9c65e3671181.png)
+
 
 ### Jawaban 3,4,5,6
 * 3. Semua client yang ada HARUS menggunakan konfigurasi IP dari DHCP Server. Client yang melalui Switch1 mendapatkan range IP dari [prefix IP].1.20 - [prefix IP].1.99 dan [prefix IP].1.150 - [prefix IP].1.169.
@@ -102,11 +105,11 @@ subnet 192.199.3.0 netmask 255.255.255.0 {
   max-lease-time 7200; 
 }
 ```
-(gambar)
+![Screenshot (605)(subnet)](https://user-images.githubusercontent.com/76694068/141646911-fc085e1d-d24a-4ed5-9bba-aecddbb851e2.png)
 
 Restart dengan perintah `service isc-dhcp-server restart`
 Kemudian cek dengan perintah `service isc-dhcp-server status`
-(gambar)
+![image](https://user-images.githubusercontent.com/76694068/141646975-5c67b33e-77da-4362-90b0-780d3b3be3e6.png)
 
 #### DHCP Client (LogueTown, Alabasta, TottoLand, Skypie)
 Komentar konfigurasi lama (IP Statis) pada file /etc/network/interfaces dan tambahkan:
@@ -114,8 +117,9 @@ Komentar konfigurasi lama (IP Statis) pada file /etc/network/interfaces dan tamb
 auto eth0
 iface eth0 inet dhcp
 ```
+![image](https://user-images.githubusercontent.com/76694068/141647063-a87cbc1f-7834-4258-9196-bf958db5517c.png)
+
 Restart dan cek dengan `ip a`
-(gambar)
 periksa apakah sudah sesuai dengan ip (EniesLobby)
 
 ```
@@ -129,8 +133,11 @@ forwarders {
     192.168.122.1; // IP namserver Foosha
 };
 ```
-(gambar)
+![image](https://user-images.githubusercontent.com/76694068/141646315-7531c205-8492-4f46-8f9d-794b6e341cdf.png)
+
 Periksa apakah klien tersambung internet atau tidak.
+![image](https://user-images.githubusercontent.com/76694068/141646356-585ca2c3-dd2a-4e8a-aaee-a6bf32cec326.png)
+
 
 ### 7. Luffy dan Zoro berencana menjadikan Skypie sebagai server untuk jual beli kapal yang dimilikinya dengan alamat IP yang tetap dengan IP [prefix IP].3.69.
 Tambahkan pada konfigurasi di DHCP Server (Jipangu) pada file `/etc/dhcp/dhcpd.conf`
@@ -140,10 +147,10 @@ host Skypie {
     fixed-address 192.192.3.69;
 }
 ```
-(gambar)
+![Screenshot (606)(no7)](https://user-images.githubusercontent.com/76694068/141646401-2f4b6ddf-548b-4c3a-8c84-a616edf778f5.png)
 
 Hardware address di Skypie dapat dilihat dengan `ip a`
-(gambar)
+![image](https://user-images.githubusercontent.com/76694068/141646450-c1a31558-d504-4b41-b848-c729ebd60823.png)
 
 Restart DHCP Server (Jipangu) dengan perintah `service isc-dhcp-server restart`
 
@@ -151,10 +158,10 @@ Pada DHCP Client Skypie, tambahkan konfigurasi pada file `/etc/network/interface
 ```
 hwaddress ether b6:e7:28:cb:47:a6
 ```
-(gambar)
+![image](https://user-images.githubusercontent.com/76694068/141646585-a9ca8390-c4a8-4861-946f-2793da39286c.png)
 
 Restart node Skypie dan cek menggunakan `ip a` dan cek apakah sudah menggunakan IP Address yang dikonfigurasikan sebagai fixed address.
-(gambar)
+![image](https://user-images.githubusercontent.com/76694068/141646616-579c858d-daea-420f-a43e-9ceeb878b688.png)
 
 ### 8. Loguetown digunakan sebagai client Proxy agar transaksi jual beli dapat terjamin keamanannya, juga untuk mencegah kebocoran data transaksi. Pada Loguetown, proxy harus bisa diakses dengan nama jualbelikapal.yyy.com dengan port yang digunakan adalah 5000.
 * Pada node Water7, ubah config squid pada `/etc/squid/squid.conf` menjadi seperti berikut :
