@@ -8,21 +8,153 @@
 
 
 
+Pertama untuk menyambungkan node2 lainnya ke internet, isikan `iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE -s 192.192.0.0/16` pada roter "Foosha"
+Isikan `echo nameserver 192.168.122.1 > /etc/resolv.conf` pada server2 lainnya agar nameservernya terganti dan bisa menerima internet. dan atur konfigurasi nodenya sesuai dengan modul sebelumnya.
+
+
 ## SOAL
 
 ### 1. Luffy bersama Zoro berencana membuat peta tersebut dengan kriteria EniesLobby sebagai DNS Server, Jipangu sebagai DHCP Server, Water7 sebagai Proxy Server.
 
+* EniesLobby sebagai DNS Server
+Instalasi pada EniesLobby sebagai berikut
+```
+apt-get update
+apt-get install bind9
+```
+* Jipangu sebagai DHCP Server
+Instalasi pada Jipangu sebagai berikut
+```
+apt-get update
+apt-get install isc-dhcp-server
+```
+Ganti `INTERFACES=` paad file `/etc/default/isc-dhcp-server.` dengan `INTERFACES="eth0"`. maksud dari hal ini adalah untuk menyambungkan klien DHCp yang aman adalah Switch 1 dan 2 melalui eth0 milik Jipangu.
+(gambar)
+
+* Water7 sebagai Proxy Server
+Instalasi pada Water7 sebagai berikut
+```
+apt-get update
+apt-get install squid
+```
+Lakukan konfigurasi squid dengan membackup file konfigurasi default squid `mv /etc/squid/squid.conf /etc/squid/squid.conf.bak`
+Buat konfigurasi squid pada file `/etc/squid/squid.conf` dengan menambahkan
+```
+http_port 8080
+visible_hostname Water7
+```
+(gambar)
+Restart dengan `service squid restart` dan cek status squid dengan `service squid status`
+
+
 ### 2. Foosha sebagai DHCP Relay.
+Instalasi pada Foosha sebagai berikut
+```
+apt-get update
+apt-get install isc-dhcp-relay
+```
+* Jika muncul seperti gambar, maka masukkan hal2 yang diperlukan yaitu server milik DHCP server (Jipangu) dan Interfaces milih DHCP Server dan Client
+```
+SERVERS="192.199.2.4"
+INTERFACES="eth1 eth3 eth2"
+```
+(gambar)
+* Cara lainnya, Konfigurasi pada file `/etc/default/isc-dhcp-relay` dan isi `SERVER=` dengan IP DHCP server dan isi `INTERFACES=` dengan interface milik DHCP server dan DHCP client.
+(Gambar)
+
+Restart dengan perintah `service isc-dhcp-relay restart`
+Lakukan konfigurasi pada file `/etc/sysctl.conf` untuk membuka IP Forwarding dengan uncommet pada `net.ipv4.ip_forward=1`
+(gambar)
 
 ### 3. Semua client yang ada HARUS menggunakan konfigurasi IP dari DHCP Server. Client yang melalui Switch1 mendapatkan range IP dari [prefix IP].1.20 - [prefix IP].1.99 dan [prefix IP].1.150 - [prefix IP].1.169.
-
 ### 4. Client yang melalui Switch3 mendapatkan range IP dari [prefix IP].3.30 - [prefix IP].3.50.
-
 ### 5. Client mendapatkan DNS dari EniesLobby dan client dapat terhubung dengan internet melalui DNS tersebut.
-
 ### 6. Lama waktu DHCP server meminjamkan alamat IP kepada Client yang melalui Switch1 selama 6 menit sedangkan pada client yang melalui Switch3 selama 12 menit. Dengan waktu maksimal yang dialokasikan untuk peminjaman alamat IP selama 120 menit.
 
+### Jawaban 3,4,5,6
+#### DHCP Server (Jipangu)
+lakukan konfigurasi di file `/etc/dhcp/dhcpd.conf`
+* Switch 2
+```
+subnet 192.199.2.0 netmask 255.255.255.0 {
+}
+```
+* Switch 1
+```
+subnet 192.199.1.0 netmask 255.255.255.0 {
+  range 192.199.1.20 192.192.1.99;
+  range 192.199.1.150 192.199.1.169; 
+  option routers 192.199.1.1; 
+  option broadcast-address 192.199.1.255;
+  option domain-name-servers 192.199.2.2; 
+  default-lease-time 360; 
+  max-lease-time 7200; 
+}
+```
+* Switch 3
+```
+subnet 192.199.3.0 netmask 255.255.255.0 {
+  range 192.199.3.30 192.199.3.50; 
+  option routers 192.199.3.1; 
+  option broadcast-address 192.199.3.255;
+  option domain-name-servers 192.199.2.2; 
+  default-lease-time 720; 
+  max-lease-time 7200; 
+}
+```
+(gambar)
+
+Restart dengan perintah `service isc-dhcp-server restart`
+Kemudian cek dengan perintah `service isc-dhcp-server status`
+(gambar)
+
+#### DHCP Client (LogueTown, Alabasta, TottoLand, Skypie)
+Komentar konfigurasi lama (IP Statis) pada file /etc/network/interfaces dan tambahkan:
+```
+auto eth0
+iface eth0 inet dhcp
+```
+Restart dan cek dengan `ip a`
+(gambar)
+periksa apakah sudah sesuai dengan ip (EniesLobby)
+
+```
+### Lakukan pada semua interface DHCP Client.
+```
+
+#### DNS Forwader
+lakukan konfigurasi pada DNS Server (EniesLobby) `/etc/bind/named.conf.options`tambahkan line seperti dibawah dan beri komentar pada `// dnssec-validation auto;` dan tambahkan `allow-query{any;};`
+```
+forwarders {
+    192.168.122.1; // IP namserver Foosha
+};
+```
+(gambar)
+Periksa apakah klien tersambung internet atau tidak.
+
 ### 7. Luffy dan Zoro berencana menjadikan Skypie sebagai server untuk jual beli kapal yang dimilikinya dengan alamat IP yang tetap dengan IP [prefix IP].3.69.
+Tambahkan pada konfigurasi di DHCP Server (Jipangu) pada file `/etc/dhcp/dhcpd.conf`
+```
+host Skypie {
+    hardware ethernet b6:e7:28:cb:47:a6;
+    fixed-address 192.192.3.69;
+}
+```
+(gambar)
+
+Hardware address di Skypie dapat dilihat dengan `ip a`
+(gambar)
+
+Restart DHCP Server (Jipangu) dengan perintah `service isc-dhcp-server restart`
+
+Pada DHCP Client Skypie, tambahkan konfigurasi pada file `/etc/network/interfaces`
+```
+hwaddress ether b6:e7:28:cb:47:a6
+```
+(gambar)
+
+Restart node Skypie dan cek menggunakan `ip a` dan cek apakah sudah menggunakan IP Address yang dikonfigurasikan sebagai fixed address.
+(gambar)
 
 ### 8. Loguetown digunakan sebagai client Proxy agar transaksi jual beli dapat terjamin keamanannya, juga untuk mencegah kebocoran data transaksi. Pada Loguetown, proxy harus bisa diakses dengan nama jualbelikapal.yyy.com dengan port yang digunakan adalah 5000.
 * Pada node Water7, ubah config squid pada `/etc/squid/squid.conf` menjadi seperti berikut :
